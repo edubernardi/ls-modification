@@ -295,6 +295,10 @@
                                           bool symlink_target,
                                           struct obstack *stack,
                                           size_t start_col);
+                                          
+   // Modificacao: Declaracao da funcao que retorna o icone baseado no nome
+   static char* get_file_icon(const char* filename);
+   
    static void prep_non_filename_text (void);
    static bool print_type_indicator (bool stat_ok, mode_t mode,
                                      enum filetype type);
@@ -4780,7 +4784,11 @@
      if (stack)
        push_current_dired_pos (stack);
    
-     fwrite (buf + skip_quotes, 1, len - (skip_quotes * 2), stdout);
+     fwrite(buf + skip_quotes, 1, len - (skip_quotes * 2), stdout);
+     
+     // Modificacao: Resgata e imprime na tela o icone baseado no nome do arquivo
+     const char* icon = get_file_icon(name);
+     fwrite(icon, 1, strlen(icon), stdout);
    
      dired_pos += len;
    
@@ -4835,6 +4843,38 @@
    
      return len;
    }
+   
+   // Modificacao: Funcao que, baseada na extensao do arquivo passado o associa a um icone, por padrao retorna 📄
+   static char* get_file_icon(const char* filename) {
+     if (strstr(filename, ".c")) return "🔧";
+     if (strstr(filename, ".h")) return "📘";
+     if (strstr(filename, ".py")) return "🐍";
+     if (strstr(filename, ".java")) return "☕";
+     
+     if (strstr(filename, ".txt")) return "📄";
+     if (strstr(filename, ".pdf")) return "📕";
+   
+     if (strstr(filename, ".jpg") || strstr(filename, ".jpeg") ||
+         strstr(filename, ".png") || strstr(filename, ".gif")) return "🖼️";
+   
+     if (strstr(filename, ".mp3")) return "🎵";
+   
+     if (strstr(filename, ".mp4") || strstr(filename, ".mkv")) return "🎬";
+   
+     if (strstr(filename, ".zip") || strstr(filename, ".tar") || strstr(filename, ".gz") ||
+         strstr(filename, ".7z") || strstr(filename, ".rar"))
+       return "📦";
+   
+     if (strstr(filename, ".sh") || strstr(filename, ".bat") || strstr(filename, ".exe"))
+       return "🚀";
+   
+     const char* dot = strrchr(filename, '.');
+     if (!dot || strcmp(filename, ".") == 0 || strcmp(filename, "..") == 0)
+       return "📁";
+   
+     return "📄";
+   }
+   
    
    static void
    prep_non_filename_text (void)
@@ -5127,8 +5167,9 @@
          while (true)
            {
              struct fileinfo const *f = sorted_file[filesno];
-             size_t name_length = length_of_file_name_and_frills (f);
-             size_t max_name_length = line_fmt->col_arr[col++];
+             // Modificacao: adicionados 2 caracteres de comprimento para considerar os emojis
+             size_t name_length = length_of_file_name_and_frills (f) + 2;
+             size_t max_name_length = line_fmt->col_arr[col++] + 2;
              print_file_name_and_frills (f, pos);
    
              filesno += rows;
